@@ -7,7 +7,7 @@ type VisualizeProps<N extends NodeData, L extends Link> = ForceDirectedGraphProp
   tooltip: (node: N, location: {x: number, y: number}) => ReactElement;
 };
 
-export default function Visualize<N extends NodeData, L extends Link>(props: VisualizeProps<N, L> ): ReactElement {
+export function Visualize<N extends NodeData, L extends Link>(props: VisualizeProps<N, L> ): ReactElement {
   const [node, setNode] = useState<N | null>(null);
   const [dragging, setDragging] = useState(false);
   const [mouseLocation, setMouseLocation] = useState({x:0, y: 0});
