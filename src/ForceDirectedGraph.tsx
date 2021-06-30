@@ -45,7 +45,6 @@ function ForceDirectedGraph<N extends NodeData, L extends Link>(props: ForceDire
     return d3.select(graphContainer.current).selectChild('.graph-nodes').selectChildren<SVGGElement, N & Datum>('.graph-node');
   }
   
-  //Update Node Selection on mount for Groups to work correctly
   useEffect(() => { setNodes(nodeSelection()); }, []);
   useLayoutEffect(() => {
     if (nodes) {
