@@ -11,7 +11,7 @@ export interface GroupStyle {
 
 interface GraphGroupsProps<N extends NodeData> {
   onTick: (callback: () => void) => void;
-  groupStyle: (groupId: string) => GroupStyle;
+  groupStyle?: (groupId: string) => GroupStyle;
   nodes: d3.Selection<SVGGElement, N & Datum, any, any>;
 }
 
@@ -71,9 +71,9 @@ export default class GraphGroups<N extends NodeData> extends React.PureComponent
     .append('g')
     .attr('class', 'path_placeholder')
     .append('path')
-    .attr('stroke', d => this.props.groupStyle(d).stroke)
-    .attr('fill', d => this.props.groupStyle(d).fill)
-    .attr('opacity', d => this.props.groupStyle(d).opacity);
+    .attr('stroke', d => this.props.groupStyle?.(d).stroke ?? 'black')
+    .attr('fill', d => this.props.groupStyle?.(d).fill ?? 'black')
+    .attr('opacity', d => this.props.groupStyle?.(d).opacity ?? 0.1);
   }
   
   componentDidMount(): void {

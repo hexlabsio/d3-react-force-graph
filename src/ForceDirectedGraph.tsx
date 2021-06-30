@@ -1,4 +1,4 @@
-import {Simulation, SimulationLinkDatum, SimulationNodeDatum} from "d3";
+import {Simulation} from "d3";
 import React, {memo, MouseEvent, ReactElement, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import * as d3 from 'd3';
 import {Datum} from "./datum";
@@ -17,14 +17,15 @@ export interface ForceDirectedGraphProps<N extends NodeData, L extends Link> {
   width: number;
   height: number;
   data: GraphData<N,L>;
-  groupStyle: (groupId: string) => GroupStyle;
-  simulation?: (simulation: Simulation<N & SimulationNodeDatum, L & SimulationLinkDatum<N & SimulationNodeDatum>>) => void;
+  groupStyle?: (groupId: string) => GroupStyle;
+  simulation?: () => Simulation<N & Datum, L>;
   node?: (data: N) => ReactElement;
   link?: (data: L) => ReactElement;
   mouseMove?: (x: number, y: number) => void;
   nodeMouseEvents?: Partial<NodeMouseEvents<N>>;
   restartDrag?: () => void;
   stopDrag?: () => void;
+  fade?: number;
 }
 
 type NodeSelection<N extends NodeData> = d3.Selection<SVGGElement, N & Datum, any, any>;
@@ -54,13 +55,16 @@ function ForceDirectedGraph<N extends NodeData, L extends Link>(props: ForceDire
   });
   
   function createSimulation(){
-      const newSimulation = d3.forceSimulation<N & Datum>();
-      newSimulation.force('link', d3.forceLink<N & Datum, LinkDatum<N, L>>().id(({id}) => id))
-      .force('charge', d3.forceManyBody())
-      .force('center', d3.forceCenter(props.width / 2, props.height / 2))
-      .nodes(props.data.nodes as Array<N & Datum>);
+      const newSimulation = (props.simulation ?? (() => {
+        const simulation = d3.forceSimulation<N & Datum>();
+        simulation.force('link', d3.forceLink<N & Datum, LinkDatum<N, L>>().id(({id}) => id))
+        .force('charge', d3.forceManyBody())
+        .force('center', d3.forceCenter(props.width / 2, props.height / 2))
+        .nodes(props.data.nodes as Array<N & Datum>);
   
-      (newSimulation.force('link') as any)?.links(props.data.links);
+        (simulation.force('link') as any)?.links(props.data.links);
+        return simulation;
+      }))();
 
       simulation.current = newSimulation;
       const nodes = d3.select(graphContainer.current).selectChild('.graph-nodes').selectChildren<SVGGElement, N & Datum>('.graph-node');
@@ -70,16 +74,17 @@ function ForceDirectedGraph<N extends NodeData, L extends Link>(props: ForceDire
       simulation.current.nodes(props.data.nodes as Array<N & Datum>).on('tick', onTickHandler(nodes, links.current, () => {
         if (groupUpdate.current) groupUpdate.current();
       }))
-  
-      fadeOnHover(nodes, links.current);
+      
+      if(props.fade)
+        fadeOnHover(props.fade, nodes, links.current);
   }
   
-  function fadeOnHover(nodes: d3.Selection<SVGGElement, N & Datum, any, any>, links: d3.Selection<SVGGElement, LinkDatum<N, L>, any, any>) {
+  function fadeOnHover(opacity: number, nodes: d3.Selection<SVGGElement, N & Datum, any, any>, links: d3.Selection<SVGGElement, LinkDatum<N, L>, any, any>) {
     nodes.on('mouseover.fade', (event: MouseEvent<SVGGElement>, current: N) => {
       nodes.style('fill-opacity', n => {
-        return (dragging.current || isConnected(links, current, n)) ? 1 : 0.1;
+        return (dragging.current || isConnected(links, current, n)) ? 1 : opacity;
       });
-      links.style('stroke-opacity', o => (dragging.current || o.source === current || o.target === current ? 1 : 0.1));
+      links.style('stroke-opacity', o => (dragging.current || o.source === current || o.target === current ? 1 : opacity));
     });
     nodes.on('mouseout.fade', () => {
       nodes.style('fill-opacity', 1);

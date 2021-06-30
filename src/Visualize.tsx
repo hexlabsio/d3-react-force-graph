@@ -15,10 +15,15 @@ export function Visualize<N extends NodeData, L extends Link>(props: VisualizePr
     ...props,
     mouseMove: (x: number, y: number) => {setMouseLocation({x,y})},
     nodeMouseEvents: {
-      onMouseEnter: (e, node) => setTimeout(() => setNode(node), 200),
-      onMouseLeave: () => {
+      ...props.nodeMouseEvents,
+      onMouseEnter: (e, node) => {
+        setTimeout(() => setNode(node), 200);
+        props.nodeMouseEvents?.onMouseEnter?.(e, node);
+      },
+      onMouseLeave: (e, node) => {
         setNode(null);
         setTimeout(() => setNode(null), 200);
+        props.nodeMouseEvents?.onMouseLeave?.(e, node);
       }
     },
     restartDrag: () => setDragging(true),
