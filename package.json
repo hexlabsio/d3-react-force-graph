@@ -8,7 +8,7 @@
   "files": ["dist"],
   "homepage": "https://github.com/hexlabsio/d3-react-force-graph#readme",
   "scripts": {
-    "build": "webpack",
+    "build": "tsc",
     "prebuild": "npm run lint",
     "lint": "eslint src --ext .ts,.tsx",
     "test": "npx jest --runInBand --detectOpenHandles --colors --verbose --reporters=default --coverage --passWithNoTests",
