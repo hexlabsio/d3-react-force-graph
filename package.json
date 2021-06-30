@@ -5,6 +5,7 @@
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": ["dist"],
   "homepage": "https://github.com/hexlabsio/d3-react-force-graph#readme",
   "scripts": {
     "build": "webpack",
