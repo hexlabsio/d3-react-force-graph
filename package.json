@@ -10,7 +10,7 @@
     "build": "webpack",
     "prebuild": "npm run lint",
     "lint": "eslint src --ext .ts,.tsx",
-    "test": "npx jest --runInBand --detectOpenHandles --colors --verbose --reporters=default --coverage",
+    "test": "npx jest --runInBand --detectOpenHandles --colors --verbose --reporters=default --coverage --passWithNoTests",
     "prepare": "husky install"
   },
   "keywords": [
