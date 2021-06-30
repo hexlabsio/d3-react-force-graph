@@ -4,7 +4,7 @@ import {Link} from "./GraphLink";
 import {NodeData} from "./GraphNode";
 
 type VisualizeProps<N extends NodeData, L extends Link> = ForceDirectedGraphProps<N,L> & {
-  tooltip: (node: N, location: {x: number, y: number}) => ReactElement;
+  tooltip?: (node: N, location: {x: number, y: number}) => ReactElement;
 };
 
 export function Visualize<N extends NodeData, L extends Link>(props: VisualizeProps<N, L> ): ReactElement {
@@ -31,7 +31,7 @@ export function Visualize<N extends NodeData, L extends Link>(props: VisualizePr
   }
   return <>
     <ForceDirectedGraph<N,L> {...graphProps}/>
-    {(node && !dragging) ? props.tooltip(node, {x: mouseLocation.x + 30, y: mouseLocation.y - 30}) : <></> }
+    {(props.tooltip && node && !dragging) ? props.tooltip(node, {x: mouseLocation.x + 30, y: mouseLocation.y - 30}) : <></> }
   </>;
 }
 
