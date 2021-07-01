@@ -13,6 +13,10 @@ export interface GraphData<N extends NodeData, L extends Link> {
   links: L[]
 }
 
+export interface GraphFunctions<N extends NodeData> {
+  zoomTo: (duration: number, ...id: string[]) => void;
+}
+
 export interface ForceDirectedGraphProps<N extends NodeData, L extends Link> {
   width: number;
   height: number;
@@ -26,6 +30,7 @@ export interface ForceDirectedGraphProps<N extends NodeData, L extends Link> {
   restartDrag?: () => void;
   stopDrag?: () => void;
   fade?: number;
+  functions?: (fns: GraphFunctions<N>) => void
 }
 
 type NodeSelection<N extends NodeData> = d3.Selection<SVGGElement, N & Datum, any, any>;
@@ -46,11 +51,36 @@ function ForceDirectedGraph<N extends NodeData, L extends Link>(props: ForceDire
     return d3.select(graphContainer.current).selectChild('.graph-nodes').selectChildren<SVGGElement, N & Datum>('.graph-node');
   }
   
+  function zoomTo(zoom: d3.ZoomBehavior<any, any>): GraphFunctions<N>['zoomTo'] {
+    return (duration, ...id) => {
+      if(nodes) {
+        const boundingNodes = nodes.data().filter(it => id.includes(it.id));
+        const bounds = boundingNodes.reduce(
+          ([[minx, miny], [maxx, maxy]], node) => {
+            const radius = node.radius ?? 10
+            return [[Math.min(minx, node.x - radius), Math.min(miny, node.y - radius)], [Math.max(maxx, node.x + radius), Math.max(maxy, node.y + radius)]] as [[number, number], [number, number]]
+          }, [[100000, 100000], [-100000, -100000]] as [[number, number], [number, number]]
+        );
+        const dx = bounds[1][0] - bounds[0][0];
+        const dy = bounds[1][1] - bounds[0][1];
+        const x = (bounds[0][0] + bounds[1][0]) / 2;
+        const y = (bounds[0][1] + bounds[1][1]) / 2;
+        const scale = Math.max(1, Math.min(8, 0.9 / Math.max(dx / props.width, dy / props.height)));
+        const middle = [props.width/2, props.height/2];
+        const center = [(1-scale)*middle[0], (1-scale)*middle[1]];
+        zoom.transform(d3.select(svgElement.current).transition().duration(duration), d3.zoomIdentity.translate(center[0] + (middle[0] - x) * scale, center[1] + (middle[1] - y) * scale).scale(scale));
+      }
+    }
+  }
+  
   useEffect(() => { setNodes(nodeSelection()); }, []);
   useLayoutEffect(() => {
     if (nodes) {
       createSimulation()
-      configureZoom();
+      const zoom = configureZoom();
+      props.functions?.({
+        zoomTo: zoomTo(zoom)
+      });
     }
   });
   
@@ -97,10 +127,13 @@ function ForceDirectedGraph<N extends NodeData, L extends Link>(props: ForceDire
     return links.data().some(it => (it.source === source && it.target === target) || (it.target === source && it.source === target))
   }
   
-  function configureZoom() {
-    d3.select(svgElement.current).call(d3.zoom().extent([[0, 0], [props.width, props.height]]).scaleExtent([0.1, 8]).on('zoom', event => {
+  function configureZoom(): d3.ZoomBehavior<any, any> {
+    const zoom = d3.zoom().extent([[0, 0], [props.width, props.height]]).scaleExtent([0.1, 8]).on('zoom', event => {
       d3.select(graphContainer.current).attr('transform', event.transform);
-    }) as any)
+    });
+    d3.select(svgElement.current).call(zoom as any);
+    
+    return zoom;
   }
   
   function restartDrag(){
